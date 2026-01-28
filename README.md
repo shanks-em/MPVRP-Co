@@ -6,6 +6,15 @@ Each industrial sector introduces its own specific constraints. In petroleum dis
 
 We present the Multi-Product Vehicle Routing Problem with Changeover Cost (MPVRP-CC), a variant of the classic VRP tailored to these challenges. The MPVRP-CC aims to organize the efficient distribution of multiple product types from a set of depots to a network of service stations, while accounting for the changeover cost when a vehicle switches between products.
 
+## Documentation
+Detailed problem specifications and instance structures can be found in the 
+[overview](docs/problem_definition.pdf) and [data format](docs/instance_description.pdf) sections, respectively. 
+Our dataset includes 50 instances partitioned into small, medium, and large categories to 
+reflect varying scales of stations, depots, and product quantities. Although reference 
+solutions are not included, the expected submission format is outlined 
+[here](docs/solution_description.pdf).
+
+
 ## Structure
   A faire
   
