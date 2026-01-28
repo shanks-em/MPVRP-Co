@@ -19,7 +19,14 @@ solutions are not included, the expected submission format is outlined
   A faire
   
 ## Installation
- A faire
+```bash
+# Clone the repository
+git clone https://github.com/shanks-em/MPVRP-Cc.git
+cd mpvrp-cc-solver
+
+# Install dependencies
+pip install -r requirements.txt
+```
  
 ## Use
 A faire
