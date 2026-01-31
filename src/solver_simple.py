@@ -1,24 +1,29 @@
 """
-Solveur glouton amélioré - Simple et robuste
+Solveur glouton amélioré avec gestion des stocks
 """
 
 import time
 import platform
 from typing import Dict, Optional
-from models import Instance, Solution, VehicleRoute, MiniRoute, Delivery, Station, Location
+from models import Instance, Solution, VehicleRoute, MiniRoute, Delivery, Station, Location, Depot
 
 
 class SimpleSolver:
-    """Solveur glouton optimisé"""
+    """Solveur glouton optimisé avec gestion des stocks"""
     
     def __init__(self, instance: Instance, changeover_weight: float = 0.5):
         self.instance = instance
         self.changeover_weight = changeover_weight
         
-        # Demandes restantes
+        # Demandes restantes par station
         self.remaining_demand = {}
         for s in instance.stations:
             self.remaining_demand[s.id] = list(s.demands)
+        
+        # NOUVEAU: Stocks restants par dépôt
+        self.remaining_stock = {}
+        for d in instance.depots:
+            self.remaining_stock[d.id] = list(d.stocks)
     
     def solve(self) -> Solution:
         """Résout l'instance"""
@@ -88,6 +93,10 @@ class SimpleSolver:
             if not self._has_demand_for_product(p):
                 continue
             
+            # NOUVEAU: Vérifier qu'il y a du stock disponible
+            if not self._has_stock_for_product(p):
+                continue
+            
             # Distance moyenne
             avg_dist = self._avg_distance_to_product(pos, p)
             if avg_dist == float('inf'):
@@ -109,8 +118,8 @@ class SimpleSolver:
     
     def _build_mini_route(self, vehicle, product, current_pos):
         """Construit une mini-route"""
-        # Dépôt le plus proche
-        depot = self._closest_depot(current_pos)
+        # NOUVEAU: Choisir dépôt avec stock disponible
+        depot = self._best_depot_with_stock(current_pos, product)
         if not depot:
             return None
         
@@ -121,7 +130,14 @@ class SimpleSolver:
         )
         
         pos = depot
-        capacity = vehicle.capacity
+        
+        # NOUVEAU: Capacité limitée par le stock disponible
+        available_stock = self.remaining_stock[depot.id][product]
+        capacity = min(vehicle.capacity, available_stock)
+        
+        if capacity <= 0:
+            return None
+        
         visited = set()
         
         while capacity > 0:
@@ -141,10 +157,14 @@ class SimpleSolver:
             mini_route.deliveries.append(Delivery(station.id, to_deliver))
             mini_route.quantity_loaded += to_deliver
             
-            # Mettre à jour
+            # Mettre à jour demande
             self.remaining_demand[station.id][product] -= to_deliver
             capacity -= to_deliver
             pos = station
+        
+        # NOUVEAU: Mettre à jour le stock du dépôt
+        if mini_route.quantity_loaded > 0:
+            self.remaining_stock[depot.id][product] -= mini_route.quantity_loaded
         
         return mini_route
     
@@ -162,6 +182,13 @@ class SimpleSolver:
                 return True
         return False
     
+    def _has_stock_for_product(self, product: int) -> bool:
+        """Y a-t-il du stock disponible pour ce produit?"""
+        for stocks in self.remaining_stock.values():
+            if stocks[product] > 0:
+                return True
+        return False
+    
     def _avg_distance_to_product(self, pos: Location, product: int) -> float:
         """Distance moyenne aux stations demandant ce produit"""
         distances = []
@@ -171,12 +198,31 @@ class SimpleSolver:
         
         return sum(distances) / len(distances) if distances else float('inf')
     
-    def _closest_depot(self, pos: Location):
+    def _closest_depot(self, pos: Location) -> Optional[Depot]:
         """Dépôt le plus proche"""
         if not self.instance.depots:
             return None
         
         return min(self.instance.depots, key=lambda d: pos.distance_to(d))
+    
+    def _best_depot_with_stock(self, pos: Location, product: int) -> Optional[Depot]:
+        """Meilleur dépôt avec stock disponible pour le produit"""
+        candidates = [
+            d for d in self.instance.depots
+            if self.remaining_stock[d.id][product] > 0
+        ]
+        
+        if not candidates:
+            return None
+        
+        # Choisir le dépôt avec le meilleur ratio stock/distance
+        def score(depot):
+            distance = pos.distance_to(depot)
+            stock = self.remaining_stock[depot.id][product]
+            # Plus de stock et moins de distance = meilleur score
+            return distance / max(stock, 1)
+        
+        return min(candidates, key=score)
     
     def _closest_station_with_demand(self, pos: Location, product: int, visited: set):
         """Station la plus proche avec demande pour le produit"""
