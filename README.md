@@ -29,7 +29,64 @@ pip install -r requirements.txt
 ```
  
 ## Use
-A faire
+# MPVRP-CC - Multi-Product Vehicle Routing Problem with Changeover Cost
+
+## Installation & Setup
+
+### Create Virtual Environment
+```bash
+cd MPVRP-CC
+python3 -m venv venv
+```
+
+### Activate Virtual Environment
+```bash
+source venv/bin/activate
+```
+
+## Usage
+
+### Test API Connection
+```bash
+python3 test_api.py
+```
+
+### Generate Instances
+```bash
+python3 scripts/generate_instances.py
+```
+
+### Solve Single Instance
+```bash
+python3 main.py instances/path/to/instance.dat
+```
+
+### Validate Solution
+```bash
+python3 scripts/test_validation.py instances/path/to/instance.dat solutions/path/to/Sol_instance.dat
+```
+
+### Batch Testing
+
+**Small instances:**
+```bash
+python3 scripts/solve_batch.py instances/small/ --verify
+```
+
+**Medium instances:**
+```bash
+python3 scripts/solve_batch.py instances/medium/ --verify
+```
+
+**Large instances:**
+```bash
+python3 scripts/solve_batch.py instances/large/ --verify
+```
+
+### View Batch Results
+```bash
+gedit solutions/batch_results.csv
+```
 
 ## Instances
 Benchmark instances are available in three categories based on problem size:
